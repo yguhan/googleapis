@@ -167,12 +167,12 @@ function storeToken(token) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 
-function formatChanger(auth){
-  var _presentationId = '1BtWL2NO5qtPyfdFqUneB30mAXCsK--tCeuuZTpRbJKA';
+function formatChanger(auth, id){
+  // var _presentationId = '1BtWL2NO5qtPyfdFqUneB30mAXCsK--tCeuuZTpRbJKA';
   var _drive = google.drive('v2');
   _drive.files.patch({
     auth: auth,
-    fileId: _presentationId,
+    fileId: id,
     resource: {
       "request": [
         {
@@ -194,69 +194,18 @@ function pdfCreator(auth) {
   var _slides = google.slides('v1');
   var _drive = google.drive('v2');
 
-  var _payloadText = {
-    "requests": [
-      // {
-      //   "replaceAllText": {
-      //     "containsText": {
-      //       "text": "{고객명}",
-      //       "matchCase": true
-      //     },
-      //     "replaceText": "헬프미"
-      //   }
-      // },
-      // {
-      //   "replaceAllText": {
-      //     "containsText": {
-      //       "text": "{담당자명}",
-      //       "matchCase": true
-      //     },
-      //     "replaceText": "한윤구"
-      //   }
-      // },
-      // {
-      //   "replaceAllText": {
-      //     "containsText": {
-      //       "text": "{요약_총_비용}",
-      //       "matchCase": true
-      //     },
-      //     "replaceText": "10,000"
-      //   }
-      // },
-      // {
-      //   "replaceAllText": {
-      //     "containsText": {
-      //       "text": "{총_합계__N}",
-      //       "matchCase": true
-      //     },
-      //     "replaceText": "20,000"
-      //   }
-      // }
-    ]
-  }
-
+  
   var _replaceAllTextFactory = function(text, replaceText){
     return _replaceAllText =  {
       "replaceAllText": {
         "containsText": {
           "text": text,
-          "matchCase": ""
+          "matchCase": false
         },
         "replaceText": replaceText
       }
     }
   };
-
-  _payloadText.requests.push(_replaceAllTextFactory("{고객명}", "삼성"));
-  _payloadText.requests.push(_replaceAllTextFactory("{담당자명}", "한윤구"));
-  _payloadText.requests.push(_replaceAllTextFactory("{항목}", "항목 A"));
-  _payloadText.requests.push(_replaceAllTextFactory("{공과금}", "50000"));
-  _payloadText.requests.push(_replaceAllTextFactory("{요약_총_공과금}", "50000"));
-  _payloadText.requests.push(_replaceAllTextFactory("{요약_총_수수료}", "100000"));
-
-  _payloadText.requests.push(_replaceAllTextFactory("{요약_총_비용}", "150000"));
-  _payloadText.requests.push(_replaceAllTextFactory("{총_합계_N}", "200000"));
-  _payloadText.requests.push(_replaceAllTextFactory("{고객명}", "삼성"));
 
     //1, 0 ,2
   var _insertTableRowsFactory = function(tableObjectId, rowIndex, columnIndex, number){
@@ -287,101 +236,66 @@ function pdfCreator(auth) {
     }
   }
 
-  var _replaceAllTextRequest = function(file, auth, payload, callback){
-    _slides.presentations.batchUpdate({
-      auth: auth,
-      presentationId: file.id,
-      resource: payload
-    }, function(err, slide){
-      if(err){
-        console.log(err);
+  var _deleteObjectFactory = function(id){
+    return _deleteObject = {
+      "deleteObject": {
+        "objectId": id,
       }
-      callback(slide, auth);
-    });
+    }
   }
 
-  var _insertTableRowsRequest = function(slide, auth){
-    console.log("slide");
-    console.log(slide);
+  var _slideReq = function(file, auth, callback){
     _slides.presentations.get({
       auth:auth,
-      presentationId: slide.presentationId,
+      presentationId: file.id,
     }, function(err, slide){
       if(err){
         console.log(err);
       }
+      
       var _tableObjectId = slide.slides[2].pageElements[1].objectId;
 
-      var _payloadTable = {
+      // console.log(slide);
+
+      var _payload = {
         "requests": [
-          // {
-          //   "insertTableRows": {
-          //     "tableObjectId": _tableObjectId,
-          //     "cellLocation": {
-          //       "rowIndex": 1,
-          //       "columnIndex": 0
-          //     },
-          //     "insertBelow": true,
-          //     "number": 2
-          //   }
-          // },
-          // {
-          //   "insertText": {
-          //       "objectId": _tableObjectId,
-          //       "cellLocation": {
-          //         "rowIndex": 2,
-          //         "columnIndex": 0
-          //       },
-          //       "text": "요약 항목2",
-          //       "insertionIndex": 0
-          //   }
-          // },
-          // {
-          //   "insertText": {
-          //       "objectId": _tableObjectId,
-          //       "cellLocation": {
-          //         "rowIndex": 2,
-          //         "columnIndex": 1
-          //       },
-          //       "text": "항목2",
-          //       "insertionIndex": 0
-          //   }
-          // },
-          // {
-          //   "insertText": {
-          //       "objectId": _tableObjectId,
-          //       "cellLocation": {
-          //         "rowIndex": 2,
-          //         "columnIndex": 3
-          //       },
-          //       "text": "헬프미 수수료2",
-          //       "insertionIndex": 0
-          //   }
-          // },
         ]
       }
+      
+      //payload text
+      _payload.requests.push(_replaceAllTextFactory("{고객명}", "삼성"));
+      _payload.requests.push(_replaceAllTextFactory("{담당자명}", "한윤구"));
+      _payload.requests.push(_replaceAllTextFactory("{항목}", "항목 A"));
+      _payload.requests.push(_replaceAllTextFactory("{공과금}", "50000"));
+      _payload.requests.push(_replaceAllTextFactory("{요약_총_공과금}", "50000"));
+      _payload.requests.push(_replaceAllTextFactory("{요약_총_수수료}", "100000"));
+      _payload.requests.push(_replaceAllTextFactory("{요약_총_비용}", "150000"));
+      _payload.requests.push(_replaceAllTextFactory("{총_합계_N}", "200000"));
+      _payload.requests.push(_replaceAllTextFactory("{고객명}", "삼성"));
 
-      _payloadTable.requests.push(_insertTableRowsFactory(_tableObjectId, 1, 0 ,2));
-      _payloadTable.requests.push(_insertTextFactory(_tableObjectId, 2, 0 ,"요약 항목2"));
-      _payloadTable.requests.push(_insertTextFactory(_tableObjectId, 2, 1 ,"항목2"));
-      _payloadTable.requests.push(_insertTextFactory(_tableObjectId, 2, 2 ,"공과금2"));
-      _payloadTable.requests.push(_insertTextFactory(_tableObjectId, 2, 3 ,"헬프미 수수료2"));
+
+      //payload table
+      _payload.requests.push(_insertTableRowsFactory(_tableObjectId, 1, 0 ,2));
+      _payload.requests.push(_insertTextFactory(_tableObjectId, 2, 0 ,"요약 항목2"));
+      _payload.requests.push(_insertTextFactory(_tableObjectId, 2, 1 ,"항목2"));
+      _payload.requests.push(_insertTextFactory(_tableObjectId, 2, 2 ,"공과금2"));
+      _payload.requests.push(_insertTextFactory(_tableObjectId, 2, 3 ,"헬프미 수수료2"));
+
+      //payload delete slide
+      _payload.requests.push(_deleteObjectFactory('p16'));
 
       _slides.presentations.batchUpdate({
         auth: auth,
         presentationId: slide.presentationId,
-        resource: _payloadTable
+        resource: _payload
       }, function(err, slide){
         if(err){
           console.log(err);
         }
-        console.log(slide);
+        callback(auth, slide.presentationId);
       })
     })
   }
-  // let _newSlideId;
-
-
 
   var _file =  _drive.files.copy({
     auth: auth,
@@ -390,6 +304,6 @@ function pdfCreator(auth) {
       if(err){
         console.log(err);
       }
-      _replaceAllTextRequest(file, auth, _payloadText, _insertTableRowsRequest);
+      _slideReq(file, auth, formatChanger);
   });
 }
